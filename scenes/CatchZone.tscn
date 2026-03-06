@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://cCatchZone001"]
 
-[ext_resource type="Script" path="res://scripts/CatchZone.cs" id="1_catchzone"]
+[ext_resource type="Script" path="res://scripts/CatchZone.gd" id="1_catchzone"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_catch"]
 size = Vector3(2.4, 0.3, 0.6)

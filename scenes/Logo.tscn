@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c4quulyyrmy78"]
 
-[ext_resource type="Script" uid="uid://dacgkwh01gp0x" path="res://scripts/Logo.cs" id="1_logo"]
+[ext_resource type="Script" uid="uid://bqlg58mlm6ff5" path="res://scripts/Logo.gd" id="1_logo"]
 
 [node name="Logo" type="Control" unique_id=1111064651]
 layout_mode = 3

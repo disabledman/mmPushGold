@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://cGame001"]
 
-[ext_resource type="Script" path="res://scripts/Game.cs" id="1_game"]
+[ext_resource type="Script" path="res://scripts/Game.gd" id="1_game"]
 [ext_resource type="PackedScene" uid="uid://cCoin001" path="res://scenes/Coin.tscn" id="2_coin"]
 [ext_resource type="PackedScene" uid="uid://cCatchZone001" path="res://scenes/CatchZone.tscn" id="3_catchzone"]
 
@@ -38,16 +38,16 @@ albedo_color = Color(0.5, 0.4, 0.2, 1)
 albedo_color = Color(0.45, 0.35, 0.18, 1)
 
 [node name="Game" type="Node3D"]
-CoinScene = ExtResource("2_coin")
-ShootOrigin = NodePath("GameArea/ShootOrigin")
-UpperLayer = NodePath("GameArea/UpperLayer")
-CatchZoneNode = NodePath("CatchZone")
-CoinsLabel = NodePath("UI/CoinsLabel")
-PauseMenu = NodePath("UI/PauseMenu")
-GameOverOverlay = NodePath("UI/GameOverOverlay")
-GameOverStats = NodePath("UI/GameOverOverlay/VBox/GameOverStats")
-ShootButton = NodePath("UI/ShootButton")
-PauseButton = NodePath("UI/PauseButton")
+coin_scene = ExtResource("2_coin")
+shoot_origin = NodePath("GameArea/ShootOrigin")
+upper_layer = NodePath("GameArea/UpperLayer")
+catch_zone_node = NodePath("CatchZone")
+coins_label = NodePath("UI/CoinsLabel")
+pause_menu = NodePath("UI/PauseMenu")
+game_over_overlay = NodePath("UI/GameOverOverlay")
+game_over_stats = NodePath("UI/GameOverOverlay/VBox/GameOverStats")
+shoot_button = NodePath("UI/ShootButton")
+pause_button = NodePath("UI/PauseButton")
 script = ExtResource("1_game")
 
 [node name="Camera3D" type="Camera3D" parent="."]

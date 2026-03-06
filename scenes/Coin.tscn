@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://cCoin001"]
 
-[ext_resource type="Script" path="res://scripts/Coin.cs" id="1_coin"]
+[ext_resource type="Script" path="res://scripts/Coin.gd" id="1_coin"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_coin"]
 height = 0.06

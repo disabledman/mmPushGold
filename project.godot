@@ -16,13 +16,14 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="推金幣遊戲"
 config/description="Push Gold Coin Game - Single player casual game"
+config/tags=PackedStringArray("3d", "physics")
 run/main_scene="res://scenes/Logo.tscn"
-config/features=PackedStringArray("4.6", "C#", "Forward Plus")
-config/tags=PackedStringArray("3d", "c#", "physics")
+config/features=PackedStringArray("4.6", "Forward Plus")
+boot_splash/show_image=false
 
 [autoload]
 
-GameManager="*res://scripts/GameManager.cs"
+GameManager="*res://scripts/GameManager.gd"
 
 [display]
 
@@ -33,10 +34,14 @@ window/handheld/orientation=1
 
 [dotnet]
 
-project/assembly_name="mmPushGold"
+project/assembly_name="推金幣遊戲"
 
 [layer_names]
 
 2d_physics/layer_1="coins"
 2d_physics/layer_2="catch_zone"
 2d_physics/layer_3="game_area"
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
