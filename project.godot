@@ -1,0 +1,42 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="推金幣遊戲"
+config/description="Push Gold Coin Game - Single player casual game"
+run/main_scene="res://scenes/Logo.tscn"
+config/features=PackedStringArray("4.6", "C#", "Forward Plus")
+config/tags=PackedStringArray("3d", "c#", "physics")
+
+[autoload]
+
+GameManager="*res://scripts/GameManager.cs"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=1
+
+[dotnet]
+
+project/assembly_name="mmPushGold"
+
+[layer_names]
+
+2d_physics/layer_1="coins"
+2d_physics/layer_2="catch_zone"
+2d_physics/layer_3="game_area"

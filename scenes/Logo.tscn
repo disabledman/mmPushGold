@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://c4quulyyrmy78"]
+
+[ext_resource type="Script" uid="uid://dacgkwh01gp0x" path="res://scripts/Logo.cs" id="1_logo"]
+
+[node name="Logo" type="Control" unique_id=1111064651]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_logo")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1477474614]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.4, 0.3, 0.1, 1)
+
+[node name="LogoLabel" type="Label" parent="." unique_id=1024909763]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -40.0
+offset_right = 150.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 48
+text = "推金幣遊戲"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Timer" type="Timer" parent="." unique_id=659863761]
+wait_time = 2.0
+one_shot = true

@@ -1,0 +1,247 @@
+[gd_scene load_steps=12 format=3 uid="uid://cGame001"]
+
+[ext_resource type="Script" path="res://scripts/Game.cs" id="1_game"]
+[ext_resource type="PackedScene" uid="uid://cCoin001" path="res://scenes/Coin.tscn" id="2_coin"]
+[ext_resource type="PackedScene" uid="uid://cCatchZone001" path="res://scenes/CatchZone.tscn" id="3_catchzone"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_back"]
+size = Vector3(12, 2, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_upper"]
+size = Vector3(12, 0.2, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower"]
+size = Vector3(12, 0.2, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(0.2, 8, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_back"]
+size = Vector3(12, 2, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_upper"]
+size = Vector3(12, 0.2, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lower"]
+size = Vector3(12, 0.2, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(0.2, 8, 6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.4, 0.3, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_upper"]
+albedo_color = Color(0.5, 0.4, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lower"]
+albedo_color = Color(0.45, 0.35, 0.18, 1)
+
+[node name="Game" type="Node3D"]
+CoinScene = ExtResource("2_coin")
+ShootOrigin = NodePath("GameArea/ShootOrigin")
+UpperLayer = NodePath("GameArea/UpperLayer")
+CatchZoneNode = NodePath("CatchZone")
+CoinsLabel = NodePath("UI/CoinsLabel")
+PauseMenu = NodePath("UI/PauseMenu")
+GameOverOverlay = NodePath("UI/GameOverOverlay")
+GameOverStats = NodePath("UI/GameOverOverlay/VBox/GameOverStats")
+ShootButton = NodePath("UI/ShootButton")
+PauseButton = NodePath("UI/PauseButton")
+script = ExtResource("1_game")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 5)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 4)
+
+[node name="GameArea" type="Node3D" parent="."]
+
+[node name="BackBoard" type="StaticBody3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -2.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/BackBoard"]
+shape = SubResource("BoxShape3D_back")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GameArea/BackBoard"]
+mesh = SubResource("BoxMesh_back")
+surface_material_override/0 = SubResource("StandardMaterial3D_wood")
+
+[node name="UpperLayer" type="StaticBody3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -3.7)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/UpperLayer"]
+shape = SubResource("BoxShape3D_upper")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GameArea/UpperLayer"]
+mesh = SubResource("BoxMesh_upper")
+surface_material_override/0 = SubResource("StandardMaterial3D_upper")
+
+[node name="LowerLayer" type="StaticBody3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/LowerLayer"]
+shape = SubResource("BoxShape3D_lower")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GameArea/LowerLayer"]
+mesh = SubResource("BoxMesh_lower")
+surface_material_override/0 = SubResource("StandardMaterial3D_lower")
+
+[node name="LeftWall" type="StaticBody3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/LeftWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="RightWall" type="StaticBody3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/RightWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="ShootOrigin" type="Node3D" parent="GameArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, -2)
+
+[node name="CoinsContainer" type="Node3D" parent="."]
+
+[node name="CatchZone" parent="." instance=ExtResource("3_catchzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 1.5)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="CoinsLabel" type="Label" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 0.95, 0.6, 1)
+theme_override_font_sizes/font_size = 28
+text = "剩餘: 100"
+horizontal_alignment = 2
+
+[node name="ShootButton" type="Button" parent="UI"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -80.0
+offset_top = -100.0
+offset_right = 80.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 24
+text = "發射"
+
+[node name="PauseButton" type="Button" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 20.0
+offset_right = -200.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "暫停"
+
+[node name="PauseMenu" type="Control" parent="UI"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="ColorRect" parent="UI/PauseMenu"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="VBox" type="VBoxContainer" parent="UI/PauseMenu"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -80.0
+offset_right = 100.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="UI/PauseMenu/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "暫停"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PauseMenu/VBox"]
+layout_mode = 2
+text = "繼續遊戲"
+
+[node name="MainMenuButton" type="Button" parent="UI/PauseMenu/VBox"]
+layout_mode = 2
+text = "返回主選單"
+
+[node name="GameOverOverlay" type="Control" parent="UI"]
+visible = false
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="ColorRect" parent="UI/GameOverOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.05, 0, 0.85)
+
+[node name="VBox" type="VBoxContainer" parent="UI/GameOverOverlay"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 200.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="UI/GameOverOverlay/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.6, 0.2, 1)
+theme_override_font_sizes/font_size = 40
+text = "遊戲結束"
+horizontal_alignment = 1
+
+[node name="GameOverStats" type="Label" parent="UI/GameOverOverlay/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "收集金幣: 0
+存活時間: 0 秒"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="UI/GameOverOverlay/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+text = "5 秒後返回主選單"
+horizontal_alignment = 1
