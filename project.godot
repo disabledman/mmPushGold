@@ -50,9 +50,9 @@ project/assembly_name="推金幣遊戲"
 [physics]
 
 # 讓大量剛體堆疊更快入睡，降低視覺微抖動
-3d/sleep_threshold_linear=0.03
-3d/sleep_threshold_angular=0.06
-3d/time_before_sleep=0.25
+3d/sleep_threshold_linear=0.06
+3d/sleep_threshold_angular=0.12
+3d/time_before_sleep=0.2
 
 [rendering]
 

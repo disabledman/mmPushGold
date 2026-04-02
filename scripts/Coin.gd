@@ -17,8 +17,9 @@ func _ready() -> void:
 	collision_mask = 0xFFFFFFFF  # collide with everything
 	can_sleep = true
 	# 減少「看起來一直在動」的微抖動/滑動
-	linear_damp = 1.5
-	angular_damp = 2.5
+	# 街機取向：更快停、更穩定（犧牲一點「真實物理」）
+	linear_damp = 4.0
+	angular_damp = 8.0
 
 
 func _physics_process(_delta: float) -> void:
@@ -32,18 +33,18 @@ func _physics_process(_delta: float) -> void:
 	var av := angular_velocity.length()
 
 	# 比專案 sleep 門檻略高一點的「視覺穩定」門檻
-	var linear_ok := lv < 0.06
-	var angular_ok := av < 0.12
+	var linear_ok := lv < 0.12
+	var angular_ok := av < 0.25
 
 	if linear_ok and angular_ok:
 		_still_time += _delta
 		# 清掉極小速度，讓堆疊更快穩定
-		if lv < 0.02:
+		if lv < 0.05:
 			linear_velocity = Vector3.ZERO
-		if av < 0.04:
+		if av < 0.1:
 			angular_velocity = Vector3.ZERO
 		# 連續穩定一段時間後才睡，避免「剛好一幀」就睡/醒來回抖
-		if _still_time >= 0.4:
+		if _still_time >= 0.25:
 			sleeping = true
 			_still_time = 0.0
 	else:

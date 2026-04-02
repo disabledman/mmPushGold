@@ -40,7 +40,7 @@ const LowerLayerMaxX := 5.5
 const LowerLayerMinZ := -2.3
 const LowerLayerMaxZ := 1.3
 const LowerLayerTopY := 0.65
-const InitialCoinsOnLower := 100
+const InitialCoinsOnLower := 200
 
 
 func _ready() -> void:
