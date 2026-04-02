@@ -53,6 +53,8 @@ script = ExtResource("1_game")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 5)
+near = 0.1
+far = 50.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 4)
@@ -66,7 +68,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -2.5)
 shape = SubResource("BoxShape3D_back")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="GameArea/BackBoard"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.001)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.003)
 mesh = SubResource("BoxMesh_back")
 surface_material_override/0 = SubResource("StandardMaterial3D_wood")
 
