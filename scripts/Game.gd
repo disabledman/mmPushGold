@@ -168,7 +168,8 @@ func _spawn_initial_coins_on_lower_layer() -> void:
 		coin.global_position = Vector3(x, LowerLayerTopY, z)
 		coin.linear_velocity = Vector3.ZERO
 		coin.angular_velocity = Vector3.ZERO
-		coin.rotation = Vector3(rng.randf_range(-0.1, 0.1), rng.randf_range(0, TAU), rng.randf_range(-0.1, 0.1))
+		# 下層初始金幣：平放，避免因微傾斜導致長時間緩慢滑動（視覺上像一直在動）
+		coin.rotation = Vector3(0.0, rng.randf_range(0, TAU), 0.0)
 		_coins_container.add_child(coin)
 
 

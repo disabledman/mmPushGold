@@ -7,9 +7,44 @@ const CoinRadius := 0.15
 const CoinHeight := 0.06  # 扁平圓柱
 const Diameter := CoinRadius * 2
 
+var _still_time: float = 0.0
+
 
 func _ready() -> void:
 	lock_rotation = false
 	gravity_scale = 1.0
 	collision_layer = 1  # coins layer
 	collision_mask = 0xFFFFFFFF  # collide with everything
+	can_sleep = true
+	# 減少「看起來一直在動」的微抖動/滑動
+	linear_damp = 1.5
+	angular_damp = 2.5
+
+
+func _physics_process(_delta: float) -> void:
+	# 堆疊很多硬幣時，接觸解算可能讓上層硬幣長時間維持微小速度（視覺上像在抖）。
+	# 這裡用「持續穩定一段時間」才入睡 + 入睡前清零極小速度，避免反覆被微小接觸喚醒。
+	if sleeping:
+		_still_time = 0.0
+		return
+
+	var lv := linear_velocity.length()
+	var av := angular_velocity.length()
+
+	# 比專案 sleep 門檻略高一點的「視覺穩定」門檻
+	var linear_ok := lv < 0.06
+	var angular_ok := av < 0.12
+
+	if linear_ok and angular_ok:
+		_still_time += _delta
+		# 清掉極小速度，讓堆疊更快穩定
+		if lv < 0.02:
+			linear_velocity = Vector3.ZERO
+		if av < 0.04:
+			angular_velocity = Vector3.ZERO
+		# 連續穩定一段時間後才睡，避免「剛好一幀」就睡/醒來回抖
+		if _still_time >= 0.4:
+			sleeping = true
+			_still_time = 0.0
+	else:
+		_still_time = 0.0

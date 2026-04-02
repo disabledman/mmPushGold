@@ -32,6 +32,11 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[physics/common]
+
+# 提高物理步進率，讓大量剛體堆疊更穩、減少上層硬幣抖動
+physics_ticks_per_second=120
+
 [dotnet]
 
 project/assembly_name="推金幣遊戲"
@@ -41,6 +46,13 @@ project/assembly_name="推金幣遊戲"
 2d_physics/layer_1="coins"
 2d_physics/layer_2="catch_zone"
 2d_physics/layer_3="game_area"
+
+[physics]
+
+# 讓大量剛體堆疊更快入睡，降低視覺微抖動
+3d/sleep_threshold_linear=0.03
+3d/sleep_threshold_angular=0.06
+3d/time_before_sleep=0.25
 
 [rendering]
 

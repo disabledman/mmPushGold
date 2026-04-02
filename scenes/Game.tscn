@@ -37,6 +37,10 @@ albedo_color = Color(0.5, 0.4, 0.2, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lower"]
 albedo_color = Color(0.45, 0.35, 0.18, 1)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_table"]
+friction = 1.2
+bounce = 0.0
+
 [node name="Game" type="Node3D"]
 coin_scene = ExtResource("2_coin")
 shoot_origin = NodePath("GameArea/ShootOrigin")
@@ -74,6 +78,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_wood")
 
 [node name="UpperLayer" type="AnimatableBody3D" parent="GameArea"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -3.7)
+physics_material_override = SubResource("PhysicsMaterial_table")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/UpperLayer"]
 shape = SubResource("BoxShape3D_upper")
@@ -84,6 +89,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_upper")
 
 [node name="LowerLayer" type="StaticBody3D" parent="GameArea"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.5)
+physics_material_override = SubResource("PhysicsMaterial_table")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/LowerLayer"]
 shape = SubResource("BoxShape3D_lower")
