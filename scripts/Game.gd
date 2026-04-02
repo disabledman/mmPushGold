@@ -5,6 +5,7 @@ extends Node3D
 
 @export var coin_scene: PackedScene
 @export var shoot_origin: Node3D
+@export var back_board: Node3D
 @export var upper_layer: Node3D
 @export var catch_zone_node: Area3D
 @export var coins_label: Label
@@ -23,13 +24,12 @@ var _upper_layer_tween: Tween
 var _coins_container: Node3D
 var _camera: Camera3D
 var _last_aim_position: Vector3  # 每幀更新，供發射時使用
+var _upper_layer_retracted_z: float
+var _upper_layer_extended_z: float
 
-# 上層：深 300 單位，伸出到 50% 位置（下層一半），縮回到 10% 位置（近後板）
-const UpperLayerDepth := 3.0           # 上層深度（300 單位 = 3）
-const BackBoardZ := -2.5              # 後板 Z
-const LowerLayerHalfZ := -0.5         # 下層一半位置
-const UpperLayerRetractedZ := BackBoardZ + UpperLayerDepth * 0.1 - UpperLayerDepth * 0.5  # 10% 伸出
-const UpperLayerExtendedZ := LowerLayerHalfZ - UpperLayerDepth * 0.5  # 50%：前緣到下層一半
+# 上層：前後伸縮（Z 軸）。收回終點需與後板內側面對齊（保留小間隙）。
+@export var upper_layer_retract_gap: float = 0.002 # 0.002 = 2mm（單位為米；依場景比例可調）。避免設為 0，否則可能 z-fighting 閃爍
+@export var upper_layer_cycle_seconds: float = 0.0 # 0=使用 GameManager.UpperLayerCycleSeconds
 
 # 掉出畫面外的 Y 閾值，低於此值則回收
 const CoinRecycleThresholdY := -2.0
@@ -40,7 +40,7 @@ const LowerLayerMaxX := 5.5
 const LowerLayerMinZ := -2.3
 const LowerLayerMaxZ := 1.3
 const LowerLayerTopY := 0.65
-const InitialCoinsOnLower := 1000
+const InitialCoinsOnLower := 100
 
 
 func _ready() -> void:
@@ -49,6 +49,8 @@ func _ready() -> void:
 		coin_scene = load("res://scenes/Coin.tscn") as PackedScene
 	if shoot_origin == null:
 		shoot_origin = get_node("GameArea/ShootOrigin")
+	if back_board == null:
+		back_board = get_node("GameArea/BackBoard")
 	if upper_layer == null:
 		upper_layer = get_node("GameArea/UpperLayer")
 	if catch_zone_node == null:
@@ -94,7 +96,65 @@ func _ready() -> void:
 
 	_last_aim_position = shoot_origin.global_position
 	_spawn_initial_coins_on_lower_layer()
+	_refresh_upper_layer_motion_targets()
+	# 起始位置放在收回終點，避免一開始就與後板距離不正確
+	upper_layer.position.z = _upper_layer_retracted_z
 	_start_upper_layer_animation()
+
+
+func _get_box_shape_size_z(body: Node3D) -> float:
+	var cs := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null:
+		return 0.0
+	if not (cs.shape is BoxShape3D):
+		return 0.0
+	var box := cs.shape as BoxShape3D
+	return box.size.z * body.scale.z
+
+
+func _refresh_upper_layer_motion_targets() -> void:
+	# 1) 後板內側面：取最靠近發射點（玩家側）的那一面
+	var back_thickness := _get_box_shape_size_z(back_board)
+	var back_center_z := back_board.global_position.z
+	var shoot_z := shoot_origin.global_position.z
+	var player_dir := signf(shoot_z - back_center_z)
+	if player_dir == 0.0:
+		player_dir = 1.0
+
+	var back_face_a := back_center_z - back_thickness * 0.5
+	var back_face_b := back_center_z + back_thickness * 0.5
+	var back_inner_z := back_face_a if absf(back_face_a - shoot_z) < absf(back_face_b - shoot_z) else back_face_b
+
+	# 2) 上層：找出哪一個面是「面向後板」的那一面（離 back_inner_z 較近）
+	var upper_depth := _get_box_shape_size_z(upper_layer)
+	if upper_depth <= 0.0:
+		upper_depth = 3.0 # fallback，避免未設定碰撞盒時崩潰
+	var half := upper_depth * 0.5
+
+	var current_center_z := upper_layer.position.z
+	var upper_face_min := current_center_z - half
+	var upper_face_max := current_center_z + half
+	var use_max := absf(upper_face_max - back_inner_z) < absf(upper_face_min - back_inner_z)
+	var face_sign := 1.0 if use_max else -1.0
+
+	# 3) 目標：上層面與後板內側面對齊（留 gap，方向由兩者相對位置決定）
+	var dir := signf(current_center_z - back_inner_z)
+	if dir == 0.0:
+		dir = 1.0
+	# 永遠保留最小間隙，避免後板與上層面共平面造成 z-fighting（視覺閃爍）
+	# 這是「視覺安全距離」，與物理需求相比可以稍大一點（仍幾乎看不出來）
+	var effective_gap := maxf(absf(upper_layer_retract_gap), 0.001) # 1mm
+	var target_face_z := back_inner_z + dir * effective_gap
+	_upper_layer_retracted_z = target_face_z - face_sign * half
+
+	# 4) 伸出目標：保留現有「伸出到下層一半附近」的設計，以目前場景下層中心 Z + 其深度一半推算
+	var lower_layer := get_node_or_null("GameArea/LowerLayer") as Node3D
+	if lower_layer != null:
+		var lower_center_z := lower_layer.position.z
+		# 精準 50%：上層「面向玩家」的前緣對齊下層中心（伸出到一半）
+		_upper_layer_extended_z = lower_center_z - player_dir * (upper_depth * 0.5)
+	else:
+		_upper_layer_extended_z = current_center_z + 1.0
 
 
 func _spawn_initial_coins_on_lower_layer() -> void:
@@ -141,7 +201,8 @@ func _input(ev: InputEvent) -> void:
 
 
 func _start_upper_layer_animation() -> void:
-	var cycle_time := GameManager.UpperLayerCycleSeconds / 2.0
+	var seconds := upper_layer_cycle_seconds if upper_layer_cycle_seconds > 0.0 else GameManager.UpperLayerCycleSeconds
+	var cycle_time := seconds / 2.0
 	_animate_upper_layer(true, cycle_time)
 
 
@@ -150,7 +211,7 @@ func _animate_upper_layer(extend_toward_player: bool, duration: float) -> void:
 		_upper_layer_tween.kill()
 	_upper_layer_tween = create_tween()
 
-	var target_z := UpperLayerExtendedZ if extend_toward_player else UpperLayerRetractedZ
+	var target_z := _upper_layer_extended_z if extend_toward_player else _upper_layer_retracted_z
 	_upper_layer_tween.tween_property(upper_layer, "position:z", target_z, duration)\
 		.set_ease(Tween.EASE_IN_OUT)\
 		.set_trans(Tween.TRANS_SINE)
