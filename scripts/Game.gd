@@ -32,7 +32,11 @@ var _upper_layer_extended_z: float
 @export var upper_layer_cycle_seconds: float = 0.0 # 0=使用 GameManager.UpperLayerCycleSeconds
 
 # 掉出畫面外的 Y 閾值，低於此值則回收
-const CoinRecycleThresholdY := -2.0
+# 注意：掉幣區命中的金幣會繼續往下掉一段，讓玩家看得到它離開畫面後才消失
+const CoinRecycleThresholdY := -6.0
+
+const CollectedMetaKey := &"collected"
+const CollectedFallSpeed := 6.0
 
 # 下層平台範圍（用於散佈初始金幣）
 const LowerLayerMinX := -5.5
@@ -285,9 +289,21 @@ func _on_coin_caught(coin: Node3D) -> void:
 	if _game_over:
 		return
 
+	if coin.has_meta(CollectedMetaKey):
+		return
+	coin.set_meta(CollectedMetaKey, true)
+
 	_coins_collected += 1
 	_coins_remaining += 1
-	coin.queue_free()
+
+	# 命中掉幣區後：不要立刻消失，讓它垂直掉到畫面外再由回收邏輯清掉
+	if coin is RigidBody3D:
+		var rb := coin as RigidBody3D
+		rb.sleeping = false
+		rb.collision_layer = 0
+		rb.collision_mask = 0
+		rb.linear_velocity = Vector3(0.0, -CollectedFallSpeed, 0.0)
+		rb.angular_velocity = Vector3.ZERO
 	_update_coins_label()
 
 
