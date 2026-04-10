@@ -68,10 +68,8 @@ func _ready() -> void:
 	if pause_button == null:
 		pause_button = get_node("UI/PauseButton")
 
-	# 設定接幣區的攝影機（用於滑鼠轉 3D 座標）
+	# 掉幣區不需要移動；仍保留相機用於瞄準射擊
 	_camera = get_node_or_null("Camera3D")
-	if _camera != null:
-		catch_zone_node.set("game_camera", _camera)
 
 	# 攝影機對準接幣前緣（視角稍高）
 	if _camera != null:

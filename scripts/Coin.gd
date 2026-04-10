@@ -3,8 +3,8 @@ extends RigidBody3D
 ## 金幣剛體
 ## 扁平圓柱，用於物理推擠與掉落
 
-const CoinRadius := 0.15
-const CoinHeight := 0.06  # 扁平圓柱
+const CoinRadius := 0.3
+const CoinHeight := 0.12  # 扁平圓柱
 const Diameter := CoinRadius * 2
 
 var _still_time: float = 0.0
