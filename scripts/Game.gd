@@ -51,6 +51,11 @@ func _ready() -> void:
 	_coins_container = get_node("CoinsContainer")
 	if coin_scene == null:
 		coin_scene = load("res://scenes/Coin.tscn") as PackedScene
+	if coin_scene == null:
+		push_error("coin_scene is null. Failed to load res://scenes/Coin.tscn")
+		set_process(false)
+		set_physics_process(false)
+		return
 	if shoot_origin == null:
 		shoot_origin = get_node("GameArea/ShootOrigin")
 	if back_board == null:
