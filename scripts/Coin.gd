@@ -16,6 +16,10 @@ func _ready() -> void:
 	collision_layer = 1  # coins layer
 	collision_mask = 0xFFFFFFFF  # collide with everything
 	can_sleep = true
+	# 上層平台移動時，硬幣容易被「推擠穿過/漏下」。
+	# 開啟連續碰撞偵測（CCD）可顯著降低被移動碰撞體高速擠穿的機率。
+	# （不同 Godot 4.x 版本屬性名可能略有差異，故用 set() 保險）
+	set("continuous_cd", true)
 	# 減少「看起來一直在動」的微抖動/滑動
 	# 街機取向：更快停、更穩定（犧牲一點「真實物理」）
 	linear_damp = 4.0

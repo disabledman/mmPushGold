@@ -43,8 +43,13 @@ const LowerLayerMinX := -5.5
 const LowerLayerMaxX := 5.5
 const LowerLayerMinZ := -2.3
 const LowerLayerMaxZ := 1.3
-const LowerLayerTopY := 0.65
-const InitialCoinsOnLower := 200
+const InitialCoinsOnLower := 300
+
+# 初始生成時，幣要「剛好落在」下層頂面上方一點點：
+# 若直接用常數，任何平台/幣厚度調整都可能造成微穿模 → 反覆解算 → 視覺抖動。
+const SpawnSurfaceGapY := 0.3  # 300mm 視覺上看不出、但能避免穿模
+const SpawnEdgeSafeMargin := 1.0 # 額外內縮：避免初期推擠直接溢出平台
+const SpawnBackEdgeExtraMargin := 1.2 # 後緣額外內縮：避免靠近後板/後緣縫隙掉落
 
 
 func _ready() -> void:
@@ -102,11 +107,92 @@ func _ready() -> void:
 	get_node("UI/PauseMenu/VBox/MainMenuButton").pressed.connect(_on_pause_main_menu_pressed)
 
 	_last_aim_position = shoot_origin.global_position
+	_ensure_lower_layer_drop_rails()
 	_spawn_initial_coins_on_lower_layer()
 	_refresh_upper_layer_motion_targets()
 	# 起始位置放在收回終點，避免一開始就與後板距離不正確
 	upper_layer.position.z = _upper_layer_retracted_z
+	_start_upper_layer_animation_deferred.call_deferred()
+
+
+func _start_upper_layer_animation_deferred() -> void:
+	# 讓初始撒幣先經過至少一個 physics frame 解算穩定，
+	# 避免上層一開始就移動時把仍在重疊/穿模邊緣的硬幣擠飛或擠落。
+	await get_tree().physics_frame
+	if not is_instance_valid(upper_layer) or _game_over:
+		return
 	_start_upper_layer_animation()
+
+
+func _ensure_lower_layer_drop_rails() -> void:
+	# 下層僅「前緣」（朝玩家 / 接幣區的 Z 較大側）可讓金幣落下；其餘三邊用矮牆擋住，
+	# 避免從左右、後緣或縫隙整排漏下。
+	var game_area := get_node_or_null("GameArea") as Node3D
+	if game_area == null:
+		return
+
+	var lower := game_area.get_node_or_null("LowerLayer") as Node3D
+	if lower == null:
+		return
+	var lower_cs := lower.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if lower_cs == null or not (lower_cs.shape is BoxShape3D):
+		return
+
+	var lower_box := lower_cs.shape as BoxShape3D
+	var lower_scale := lower_cs.global_transform.basis.get_scale()
+	var lower_half_x := (lower_box.size.x * absf(lower_scale.x)) * 0.5
+	var lower_half_z := (lower_box.size.z * absf(lower_scale.z)) * 0.5
+
+	var curb_height := 0.25
+	var curb_thickness := 0.25
+	var top_y := _get_static_body_top_y(lower, 0.5)
+	var curb_y := top_y + curb_height * 0.5 - 0.01
+
+	var phys_mat: PhysicsMaterial = null
+	if lower is StaticBody3D:
+		phys_mat = (lower as StaticBody3D).physics_material_override
+
+	var cx := lower_cs.global_position.x
+	var cz := lower_cs.global_position.z
+
+	# 後緣（Z 較小）
+	if game_area.get_node_or_null("LowerBackCurb") == null:
+		var back := StaticBody3D.new()
+		back.name = "LowerBackCurb"
+		game_area.add_child(back)
+		back.physics_material_override = phys_mat
+		back.global_position = Vector3(cx, curb_y, cz - lower_half_z + curb_thickness * 0.5)
+		var back_shape := BoxShape3D.new()
+		back_shape.size = Vector3(lower_half_x * 2.0, curb_height, curb_thickness)
+		var back_cs := CollisionShape3D.new()
+		back_cs.shape = back_shape
+		back.add_child(back_cs)
+
+	# 左緣（X 較小）
+	if game_area.get_node_or_null("LowerLeftCurb") == null:
+		var left := StaticBody3D.new()
+		left.name = "LowerLeftCurb"
+		game_area.add_child(left)
+		left.physics_material_override = phys_mat
+		left.global_position = Vector3(cx - lower_half_x + curb_thickness * 0.5, curb_y, cz)
+		var left_shape := BoxShape3D.new()
+		left_shape.size = Vector3(curb_thickness, curb_height, lower_half_z * 2.0)
+		var left_cs := CollisionShape3D.new()
+		left_cs.shape = left_shape
+		left.add_child(left_cs)
+
+	# 右緣（X 較大）
+	if game_area.get_node_or_null("LowerRightCurb") == null:
+		var right := StaticBody3D.new()
+		right.name = "LowerRightCurb"
+		game_area.add_child(right)
+		right.physics_material_override = phys_mat
+		right.global_position = Vector3(cx + lower_half_x - curb_thickness * 0.5, curb_y, cz)
+		var right_shape := BoxShape3D.new()
+		right_shape.size = Vector3(curb_thickness, curb_height, lower_half_z * 2.0)
+		var right_cs := CollisionShape3D.new()
+		right_cs.shape = right_shape
+		right.add_child(right_cs)
 
 
 func _get_box_shape_size_z(body: Node3D) -> float:
@@ -168,16 +254,130 @@ func _spawn_initial_coins_on_lower_layer() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 
+	var lower_layer := get_node_or_null("GameArea/LowerLayer") as Node3D
+	var lower_top_y := _get_static_body_top_y(lower_layer, 0.5)
+	var lower_rect := _get_static_body_top_rect_xz(lower_layer)
+
 	for i in InitialCoinsOnLower:
 		var coin: RigidBody3D = coin_scene.instantiate()
-		var x := rng.randf_range(LowerLayerMinX, LowerLayerMaxX)
-		var z := rng.randf_range(LowerLayerMinZ, LowerLayerMaxZ)
-		coin.global_position = Vector3(x, LowerLayerTopY, z)
+		var coin_radius_xz := _get_rigid_body_radius_xz(coin, 0.3)
+		# 生成範圍要「向內縮」一個半徑，否則硬幣中心落在邊緣附近時會有一部分懸空，會直接掉下去。
+		# 另外再加安全邊界，避免一開始硬幣互相推擠時「立刻」溢出平台。
+		var inset := coin_radius_xz + SpawnEdgeSafeMargin
+		var min_x := lower_rect.position.x + inset
+		var max_x := lower_rect.position.x + lower_rect.size.x - inset
+		# Rect2 的 y 對應 world Z；後緣是 min_z（本場景後板在較小的 Z）
+		var min_z := lower_rect.position.y + inset + SpawnBackEdgeExtraMargin
+		var max_z := lower_rect.position.y + lower_rect.size.y - inset
+
+		# 若場景配置不完整導致 rect 無效，就回退到原本常數（但仍會保留半徑 inset 的概念）
+		if min_x >= max_x:
+			min_x = LowerLayerMinX + inset
+			max_x = LowerLayerMaxX - inset
+		if min_z >= max_z:
+			min_z = LowerLayerMinZ + inset
+			max_z = LowerLayerMaxZ - inset
+
+		var x := rng.randf_range(min_x, max_x)
+		var z := rng.randf_range(min_z, max_z)
+		var coin_half_height_y := _get_rigid_body_half_height_y(coin, 0.06)
+		# 一次生成很多枚時，若全都在同一個 Y 平面，重疊會導致初幀解算「爆炸式推擠」。
+		# 稍微分層往上疊，讓它更像自然落下堆疊，且不會瞬間把部分硬幣推到邊緣掉落。
+		var coins_per_layer := 35
+		var layer := i / coins_per_layer
+		var layer_step := maxf(coin_half_height_y * 2.0, 0.12) * 0.6
+		var y := lower_top_y + coin_half_height_y + SpawnSurfaceGapY + layer * layer_step
+		coin.global_position = Vector3(x, y, z)
 		coin.linear_velocity = Vector3.ZERO
 		coin.angular_velocity = Vector3.ZERO
 		# 下層初始金幣：平放，避免因微傾斜導致長時間緩慢滑動（視覺上像一直在動）
 		coin.rotation = Vector3(0.0, rng.randf_range(0, TAU), 0.0)
 		_coins_container.add_child(coin)
+
+
+func _get_static_body_top_y(body: Node3D, fallback_top_y: float) -> float:
+	if body == null:
+		return fallback_top_y
+	var cs := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null or cs.shape == null:
+		return fallback_top_y
+	if cs.shape is BoxShape3D:
+		var box := cs.shape as BoxShape3D
+		# 用 CollisionShape3D 的全域 transform（它可能有 local offset/scale）
+		var scale_y := _get_global_scale_y(cs)
+		return cs.global_position.y + (box.size.y * scale_y) * 0.5
+	return fallback_top_y
+
+
+func _get_rigid_body_half_height_y(body: Node3D, fallback_half_height_y: float) -> float:
+	if body == null:
+		return fallback_half_height_y
+	var cs := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null or cs.shape == null:
+		return fallback_half_height_y
+	var scale_y := _get_global_scale_y(body)
+	if cs.shape is CylinderShape3D:
+		var cyl := cs.shape as CylinderShape3D
+		return (cyl.height * scale_y) * 0.5
+	if cs.shape is BoxShape3D:
+		var box := cs.shape as BoxShape3D
+		return (box.size.y * scale_y) * 0.5
+	if cs.shape is SphereShape3D:
+		var s := cs.shape as SphereShape3D
+		return s.radius * scale_y
+	return fallback_half_height_y
+
+
+func _get_global_scale_y(node: Node3D) -> float:
+	# Godot 4: Node3D 沒有可直接取用的 global_scale 屬性；用 global_transform 的 basis 取得縮放。
+	# 若發生奇怪狀況（例如 scale 為 0），回退到 1。
+	var s := node.global_transform.basis.get_scale()
+	var y := absf(s.y)
+	return 1.0 if is_zero_approx(y) else y
+
+
+func _get_static_body_top_rect_xz(body: Node3D) -> Rect2:
+	# 回傳下層板「頂面投影」的 XZ 矩形（Rect2 的 x/y 對應 world x/z）。
+	# 注意：只支援 BoxShape3D（本專案平台就是 box）。
+	if body == null:
+		return Rect2()
+	var cs := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null or cs.shape == null:
+		return Rect2()
+	if not (cs.shape is BoxShape3D):
+		return Rect2()
+
+	var box := cs.shape as BoxShape3D
+	# 用 CollisionShape3D 的全域 transform（它可能有 local offset/scale）
+	var scale := cs.global_transform.basis.get_scale()
+	var half_x := (box.size.x * absf(scale.x)) * 0.5
+	var half_z := (box.size.z * absf(scale.z)) * 0.5
+	var cx := cs.global_position.x
+	var cz := cs.global_position.z
+	return Rect2(cx - half_x, cz - half_z, half_x * 2.0, half_z * 2.0)
+
+
+func _get_rigid_body_radius_xz(body: Node3D, fallback_radius: float) -> float:
+	if body == null:
+		return fallback_radius
+	var cs := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null or cs.shape == null:
+		return fallback_radius
+	var scale := body.global_transform.basis.get_scale()
+	var scale_xz := maxf(absf(scale.x), absf(scale.z))
+	if cs.shape is CylinderShape3D:
+		var cyl := cs.shape as CylinderShape3D
+		return cyl.radius * scale_xz
+	if cs.shape is SphereShape3D:
+		var s := cs.shape as SphereShape3D
+		return s.radius * scale_xz
+	if cs.shape is BoxShape3D:
+		# 粗略：取 box 的對角半徑，避免生成到邊緣懸空
+		var b := cs.shape as BoxShape3D
+		var half_x := (b.size.x * absf(scale.x)) * 0.5
+		var half_z := (b.size.z * absf(scale.z)) * 0.5
+		return sqrt(half_x * half_x + half_z * half_z)
+	return fallback_radius
 
 
 func _process(_delta: float) -> void:
@@ -218,6 +418,8 @@ func _animate_upper_layer(extend_toward_player: bool, duration: float) -> void:
 	if _upper_layer_tween != null:
 		_upper_layer_tween.kill()
 	_upper_layer_tween = create_tween()
+	# 上層是物理互動物件（AnimatableBody3D），用 physics tween 避免非物理幀更新造成瞬移擠飛。
+	_upper_layer_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 
 	var target_z := _upper_layer_extended_z if extend_toward_player else _upper_layer_retracted_z
 	_upper_layer_tween.tween_property(upper_layer, "position:z", target_z, duration)\

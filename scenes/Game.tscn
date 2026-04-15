@@ -79,6 +79,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_wood")
 [node name="UpperLayer" type="AnimatableBody3D" parent="GameArea"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -3.7)
 physics_material_override = SubResource("PhysicsMaterial_table")
+sync_to_physics = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="GameArea/UpperLayer"]
 shape = SubResource("BoxShape3D_upper")
