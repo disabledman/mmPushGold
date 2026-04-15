@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/Coin.gd" id="1_coin"]
 [ext_resource type="Texture2D" uid="uid://cj3jmefvwnsno" path="res://assets/coin.png" id="2_coin_tex"]
+[ext_resource type="Shader" path="res://shaders/coin_side_grooves.gdshader" id="3_coin_side_shader"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_coin"]
 height = 0.12
@@ -22,6 +23,9 @@ bounce = 0.0
 albedo_color = Color(0.9, 0.75, 0.2, 1)
 metallic = 0.8
 roughness = 0.3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_coin_side"]
+shader = ExtResource("3_coin_side_shader")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_coin_face"]
 atlas = ExtResource("2_coin_tex")
@@ -51,7 +55,7 @@ shape = SubResource("CylinderShape3D_coin")
 
 [node name="Side" type="MeshInstance3D" parent="Visual"]
 mesh = SubResource("CylinderMesh_coin")
-surface_material_override/0 = SubResource("StandardMaterial3D_coin_side")
+surface_material_override/0 = SubResource("ShaderMaterial_coin_side")
 
 [node name="FaceTop" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)

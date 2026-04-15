@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cGame001"]
+[gd_scene load_steps=14 format=3 uid="uid://cGame001"]
 
 [ext_resource type="Script" path="res://scripts/Game.gd" id="1_game"]
 [ext_resource type="PackedScene" uid="uid://cCoin001" path="res://scenes/Coin.tscn" id="2_coin"]
@@ -41,6 +41,19 @@ albedo_color = Color(0.45, 0.35, 0.18, 1)
 friction = 1.2
 bounce = 0.0
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.55, 0.65, 0.75, 1)
+sky_horizon_color = Color(0.75, 0.72, 0.6, 1)
+ground_horizon_color = Color(0.25, 0.22, 0.18, 1)
+ground_bottom_color = Color(0.12, 0.11, 0.1, 1)
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 2
+sky = SubResource("ProceduralSkyMaterial_sky")
+ambient_light_source = 2
+ambient_light_color = Color(1, 0.98, 0.9, 1)
+ambient_light_energy = 0.7
+
 [node name="Game" type="Node3D"]
 coin_scene = ExtResource("2_coin")
 shoot_origin = NodePath("GameArea/ShootOrigin")
@@ -55,6 +68,9 @@ shoot_button = NodePath("UI/ShootButton")
 pause_button = NodePath("UI/PauseButton")
 script = ExtResource("1_game")
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 5)
 near = 0.1
@@ -62,6 +78,8 @@ far = 50.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 4)
+light_energy = 2.0
+light_color = Color(1, 0.98, 0.92, 1)
 
 [node name="GameArea" type="Node3D" parent="."]
 
