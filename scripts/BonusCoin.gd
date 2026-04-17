@@ -21,6 +21,21 @@ const _RewardedMetaKey := &"rewarded"
 var _still_time: float = 0.0
 
 
+func _apply_gold_material(mi: MeshInstance3D) -> void:
+	var gold := StandardMaterial3D.new()
+	gold.albedo_color = Color(0.9, 0.75, 0.2, 1)
+	gold.metallic = 0.8
+	gold.roughness = 0.3
+	gold.vertex_color_use_as_albedo = false
+	var mesh: Mesh = mi.mesh
+	if mesh != null and mesh.get_surface_count() > 0:
+		mi.material_override = null
+		for i in mesh.get_surface_count():
+			mi.set_surface_override_material(i, gold)
+	else:
+		mi.material_override = gold
+
+
 func _ready() -> void:
 	add_to_group("bonus_coin")
 	can_sleep = true
@@ -47,12 +62,8 @@ func _ready() -> void:
 				s *= 0.1
 			mi.scale = Vector3.ONE * s
 
-		# OBJ/MTL 的貼圖路徑常無法匯入；強制套用與一般金幣相近的黃金色（見 Coin.tscn 側面材質）
-		var gold := StandardMaterial3D.new()
-		gold.albedo_color = Color(0.9, 0.75, 0.2, 1)
-		gold.metallic = 0.8
-		gold.roughness = 0.3
-		mi.material_override = gold
+		# OBJ/MTL 貼圖常遺失；強制黃金材質。部分匯入 mesh 的 `material_override` 會不生效，改逐 surface 覆寫。
+		_apply_gold_material(mi)
 
 	# 圓柱碰撞與視覺倍率一致（不依賴 OBJ 凸包）
 	if cs != null:

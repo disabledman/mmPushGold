@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://cDollarCoin001"]
+
+[ext_resource type="Script" path="res://scripts/DollarCoin.gd" id="1_dollar"]
+
+[node name="DollarCoin" type="RigidBody3D"]
+collision_layer = 1
+collision_mask = 4294967295
+can_sleep = true
+script = ExtResource("1_dollar")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Visual"]

@@ -5,6 +5,7 @@ extends Node3D
 
 @export var coin_scene: PackedScene
 @export var bonus_coin_scene: PackedScene
+@export var dollar_coin_scene: PackedScene
 @export var shoot_origin: Node3D
 @export var back_board: Node3D
 @export var upper_layer: Node3D
@@ -33,6 +34,12 @@ var _upper_layer_extended_z: float
 @export var bonus_drop_every_fallen: int = 20
 @export var bonus_add_coins_on_settled: int = 10
 @export var bonus_drop_every_shots: int = 20
+@export var dollar_drop_every_shots: int = 30
+@export var dollar_add_coins_on_settled: int = 1000
+## 同一發同時掉 bonus + dollar 時，中心點左右錯開（半寬，兩者相距約 2×此值），避免重疊穿模
+@export var special_item_spawn_half_extent: float = 0.45
+## 同時多個時依序略抬高，減少初幀重疊
+@export var special_item_spawn_y_step: float = 0.08
 
 # 上層：前後伸縮（Z 軸）。收回終點需與後板內側面對齊（保留小間隙）。
 @export var upper_layer_retract_gap: float = 0.002 # 0.002 = 2mm（單位為米；依場景比例可調）。避免設為 0，否則可能 z-fighting 閃爍
@@ -70,6 +77,8 @@ func _ready() -> void:
 		return
 	if bonus_coin_scene == null:
 		bonus_coin_scene = load("res://scenes/BonusCoin.tscn") as PackedScene
+	if dollar_coin_scene == null:
+		dollar_coin_scene = load("res://scenes/DollarCoin.tscn") as PackedScene
 	if shoot_origin == null:
 		shoot_origin = get_node("GameArea/ShootOrigin")
 	if back_board == null:
@@ -419,7 +428,15 @@ func _recycle_coins_fallen_out_of_view() -> void:
 		n.queue_free()
 
 
-func _spawn_bonus_coin() -> void:
+func _special_item_spawn_pos(slot: int) -> Vector3:
+	var base := _last_aim_position
+	var dx := (float(slot) - 0.5) * 2.0 * special_item_spawn_half_extent
+	var p := base + Vector3(dx, float(slot) * special_item_spawn_y_step, 0.0)
+	p.x = clampf(p.x, LowerLayerMinX, LowerLayerMaxX)
+	return p
+
+
+func _spawn_bonus_coin_at(spawn_pos: Vector3) -> void:
 	if bonus_coin_scene == null or _game_over or _paused:
 		return
 
@@ -428,24 +445,40 @@ func _spawn_bonus_coin() -> void:
 		push_error("BonusCoin scene root must be RigidBody3D")
 		return
 
-	# 與一般金幣相同：跟隨滑鼠瞄準（_last_aim_position）與相同向下初速
-	var spawn_pos := _last_aim_position
 	var rb := bonus as RigidBody3D
 	rb.global_position = spawn_pos
 	rb.linear_velocity = Vector3(0.0, -3.0, 0.0)
 	rb.angular_velocity = Vector3.ZERO
+	rb.sleeping = false
 	_coins_container.add_child(rb)
 
-	# 連回「落地穩定 → +10」邏輯
-	if rb.has_signal("settled"):
-		rb.connect("settled", Callable(self, "_on_bonus_coin_settled"))
 
-
-func _on_bonus_coin_settled(_bonus_coin: RigidBody3D) -> void:
-	if _game_over:
+func _spawn_dollar_coin_at(spawn_pos: Vector3) -> void:
+	if dollar_coin_scene == null or _game_over or _paused:
 		return
-	_coins_remaining += maxi(0, bonus_add_coins_on_settled)
-	_update_coins_label()
+
+	var inst := dollar_coin_scene.instantiate()
+	if not (inst is RigidBody3D):
+		push_error("DollarCoin scene root must be RigidBody3D")
+		return
+
+	var rb := inst as RigidBody3D
+	rb.global_position = spawn_pos
+	rb.linear_velocity = Vector3(0.0, -3.0, 0.0)
+	rb.angular_velocity = Vector3.ZERO
+	rb.sleeping = false
+	_coins_container.add_child(rb)
+
+
+func _apply_caught_fall_behavior(body: Node3D) -> void:
+	# 進入掉幣區後：不要立刻消失，讓它垂直掉到畫面外再由回收邏輯清掉
+	if body is RigidBody3D:
+		var rb := body as RigidBody3D
+		rb.sleeping = false
+		rb.collision_layer = 0
+		rb.collision_mask = 0
+		rb.linear_velocity = Vector3(0.0, -CollectedFallSpeed, 0.0)
+		rb.angular_velocity = Vector3.ZERO
 
 
 func _input(ev: InputEvent) -> void:
@@ -494,8 +527,16 @@ func _try_shoot() -> void:
 
 	# 每發射/掉下 20 枚金幣，自動掉下一枚獎勵幣
 	_coins_shot_out += 1
-	if bonus_drop_every_shots > 0 and (_coins_shot_out % bonus_drop_every_shots) == 0:
-		_spawn_bonus_coin()
+	var spawn_bonus := bonus_drop_every_shots > 0 and (_coins_shot_out % bonus_drop_every_shots) == 0
+	var spawn_dollar := dollar_drop_every_shots > 0 and (_coins_shot_out % dollar_drop_every_shots) == 0
+	if spawn_bonus and spawn_dollar:
+		_spawn_bonus_coin_at(_special_item_spawn_pos(0))
+		_spawn_dollar_coin_at(_special_item_spawn_pos(1))
+	else:
+		if spawn_bonus:
+			_spawn_bonus_coin_at(_last_aim_position)
+		if spawn_dollar:
+			_spawn_dollar_coin_at(_last_aim_position)
 
 	if _coins_remaining <= 0:
 		check_game_over_after_coins_settled.call_deferred()
@@ -556,17 +597,23 @@ func _on_coin_caught(coin: Node3D) -> void:
 		return
 	coin.set_meta(CollectedMetaKey, true)
 
+	# bonus / dollar：必須「掉進前方掉幣區」才給獎勵
+	if coin.is_in_group("bonus_coin"):
+		_coins_remaining += maxi(0, bonus_add_coins_on_settled)
+		_apply_caught_fall_behavior(coin)
+		_update_coins_label()
+		return
+	if coin.is_in_group("dollar_coin"):
+		_coins_remaining += maxi(0, dollar_add_coins_on_settled)
+		_apply_caught_fall_behavior(coin)
+		_update_coins_label()
+		return
+
+	# 一般金幣：原本行為（接到 +1 並計入收集數）
 	_coins_collected += 1
 	_coins_remaining += 1
 
-	# 命中掉幣區後：不要立刻消失，讓它垂直掉到畫面外再由回收邏輯清掉
-	if coin is RigidBody3D:
-		var rb := coin as RigidBody3D
-		rb.sleeping = false
-		rb.collision_layer = 0
-		rb.collision_mask = 0
-		rb.linear_velocity = Vector3(0.0, -CollectedFallSpeed, 0.0)
-		rb.angular_velocity = Vector3.ZERO
+	_apply_caught_fall_behavior(coin)
 	_update_coins_label()
 
 
