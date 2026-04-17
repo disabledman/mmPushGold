@@ -57,7 +57,7 @@ const LowerLayerMinX := -5.5
 const LowerLayerMaxX := 5.5
 const LowerLayerMinZ := -2.3
 const LowerLayerMaxZ := 1.3
-const InitialCoinsOnLower := 300
+const InitialCoinsOnLower := 100
 
 # 初始生成時，幣要「剛好落在」下層頂面上方一點點：
 # 若直接用常數，任何平台/幣厚度調整都可能造成微穿模 → 反覆解算 → 視覺抖動。
