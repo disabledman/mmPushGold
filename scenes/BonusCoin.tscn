@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://cBonusCoin001"]
+
+[ext_resource type="Script" path="res://scripts/BonusCoin.gd" id="1_bonuscoin_script"]
+[ext_resource type="Mesh" path="res://assets/3d/coin-icon.obj" id="2_bonuscoin_mesh"]
+
+[node name="BonusCoin" type="RigidBody3D"]
+collision_layer = 1
+collision_mask = 4294967295
+can_sleep = true
+script = ExtResource("1_bonuscoin_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Visual"]
+mesh = ExtResource("2_bonuscoin_mesh")
+

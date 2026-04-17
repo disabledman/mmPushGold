@@ -11,6 +11,7 @@ var _still_time: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("coin")
 	lock_rotation = false
 	gravity_scale = 1.0
 	collision_layer = 1  # coins layer

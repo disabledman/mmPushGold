@@ -4,6 +4,7 @@ extends Node3D
 ## 管理發射、上層伸縮、接幣、遊戲結束等邏輯
 
 @export var coin_scene: PackedScene
+@export var bonus_coin_scene: PackedScene
 @export var shoot_origin: Node3D
 @export var back_board: Node3D
 @export var upper_layer: Node3D
@@ -17,6 +18,8 @@ extends Node3D
 
 var _coins_remaining: int
 var _coins_collected: int
+var _coins_fallen_out: int
+var _coins_shot_out: int
 var _game_start_time: float
 var _game_over: bool
 var _paused: bool
@@ -26,6 +29,10 @@ var _camera: Camera3D
 var _last_aim_position: Vector3  # 每幀更新，供發射時使用
 var _upper_layer_retracted_z: float
 var _upper_layer_extended_z: float
+
+@export var bonus_drop_every_fallen: int = 20
+@export var bonus_add_coins_on_settled: int = 10
+@export var bonus_drop_every_shots: int = 20
 
 # 上層：前後伸縮（Z 軸）。收回終點需與後板內側面對齊（保留小間隙）。
 @export var upper_layer_retract_gap: float = 0.002 # 0.002 = 2mm（單位為米；依場景比例可調）。避免設為 0，否則可能 z-fighting 閃爍
@@ -61,6 +68,8 @@ func _ready() -> void:
 		set_process(false)
 		set_physics_process(false)
 		return
+	if bonus_coin_scene == null:
+		bonus_coin_scene = load("res://scenes/BonusCoin.tscn") as PackedScene
 	if shoot_origin == null:
 		shoot_origin = get_node("GameArea/ShootOrigin")
 	if back_board == null:
@@ -91,6 +100,8 @@ func _ready() -> void:
 
 	_coins_remaining = GameManager.InitialCoins
 	_coins_collected = 0
+	_coins_fallen_out = 0
+	_coins_shot_out = 0
 	_game_start_time = Time.get_ticks_msec() / 1000.0
 	_game_over = false
 	_paused = false
@@ -393,8 +404,48 @@ func _update_last_aim_position() -> void:
 
 func _recycle_coins_fallen_out_of_view() -> void:
 	for child in _coins_container.get_children():
-		if child is RigidBody3D and child.global_position.y < CoinRecycleThresholdY:
-			child.queue_free()
+		if not (child is Node3D):
+			continue
+		var n := child as Node3D
+		if n.global_position.y >= CoinRecycleThresholdY:
+			continue
+
+		# 只統計真正的金幣掉落（避免把獎勵幣也算進 20 枚）
+		if n.is_in_group("coin"):
+			# 命中接幣區的金幣會被標記 collected，仍會掉到畫面外才回收；不把這種「已收集」算進掉落 20 枚
+			if not n.has_meta(CollectedMetaKey):
+				_coins_fallen_out += 1
+
+		n.queue_free()
+
+
+func _spawn_bonus_coin() -> void:
+	if bonus_coin_scene == null or _game_over or _paused:
+		return
+
+	var bonus := bonus_coin_scene.instantiate()
+	if not (bonus is RigidBody3D):
+		push_error("BonusCoin scene root must be RigidBody3D")
+		return
+
+	# 與一般金幣相同：跟隨滑鼠瞄準（_last_aim_position）與相同向下初速
+	var spawn_pos := _last_aim_position
+	var rb := bonus as RigidBody3D
+	rb.global_position = spawn_pos
+	rb.linear_velocity = Vector3(0.0, -3.0, 0.0)
+	rb.angular_velocity = Vector3.ZERO
+	_coins_container.add_child(rb)
+
+	# 連回「落地穩定 → +10」邏輯
+	if rb.has_signal("settled"):
+		rb.connect("settled", Callable(self, "_on_bonus_coin_settled"))
+
+
+func _on_bonus_coin_settled(_bonus_coin: RigidBody3D) -> void:
+	if _game_over:
+		return
+	_coins_remaining += maxi(0, bonus_add_coins_on_settled)
+	_update_coins_label()
 
 
 func _input(ev: InputEvent) -> void:
@@ -440,6 +491,11 @@ func _try_shoot() -> void:
 
 	_coins_remaining -= 1
 	_update_coins_label()
+
+	# 每發射/掉下 20 枚金幣，自動掉下一枚獎勵幣
+	_coins_shot_out += 1
+	if bonus_drop_every_shots > 0 and (_coins_shot_out % bonus_drop_every_shots) == 0:
+		_spawn_bonus_coin()
 
 	if _coins_remaining <= 0:
 		check_game_over_after_coins_settled.call_deferred()
