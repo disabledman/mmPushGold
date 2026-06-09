@@ -44,12 +44,12 @@ func _physics_process(_delta: float) -> void:
 	if linear_ok and angular_ok:
 		_still_time += _delta
 		# 清掉極小速度，讓堆疊更快穩定
-		if lv < 0.05:
+		if lv < 0.55:
 			linear_velocity = Vector3.ZERO
-		if av < 0.1:
+		if av < 0.51:
 			angular_velocity = Vector3.ZERO
 		# 連續穩定一段時間後才睡，避免「剛好一幀」就睡/醒來回抖
-		if _still_time >= 0.25:
+		if _still_time >= 0.15:
 			sleeping = true
 			_still_time = 0.0
 	else:
