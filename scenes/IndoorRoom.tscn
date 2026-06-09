@@ -1,0 +1,43 @@
+[gd_scene load_steps=8 format=3 uid="uid://cindoorroom01"]
+
+[ext_resource type="Material" path="res://resources/materials/indoor/floor_material.tres" id="1_floor_mat"]
+[ext_resource type="Material" path="res://resources/materials/indoor/wall_material.tres" id="2_wall_mat"]
+[ext_resource type="Material" path="res://resources/materials/indoor/ceiling_material.tres" id="3_ceiling_mat"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(18, 0.05, 14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_back_wall"]
+size = Vector3(18, 4.5, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_side_wall"]
+size = Vector3(0.1, 4.5, 14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ceiling"]
+size = Vector3(18, 0.05, 14)
+
+[node name="IndoorRoom" type="Node3D"]
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = ExtResource("1_floor_mat")
+
+[node name="BackWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, -7)
+mesh = SubResource("BoxMesh_back_wall")
+surface_material_override/0 = ExtResource("2_wall_mat")
+
+[node name="LeftWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 2.25, 0)
+mesh = SubResource("BoxMesh_side_wall")
+surface_material_override/0 = ExtResource("2_wall_mat")
+
+[node name="RightWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 2.25, 0)
+mesh = SubResource("BoxMesh_side_wall")
+surface_material_override/0 = ExtResource("2_wall_mat")
+
+[node name="Ceiling" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
+mesh = SubResource("BoxMesh_ceiling")
+surface_material_override/0 = ExtResource("3_ceiling_mat")
