@@ -35,7 +35,7 @@ var _upper_layer_extended_z: float
 @export var bonus_add_coins_on_settled: int = 10
 @export var bonus_drop_every_shots: int = 20
 @export var dollar_drop_every_shots: int = 30
-@export var dollar_add_coins_on_settled: int = 1000
+@export var dollar_add_coins_on_settled: int = 100
 ## 同一發同時掉 bonus + dollar 時，中心點左右錯開（半寬，兩者相距約 2×此值），避免重疊穿模
 @export var special_item_spawn_half_extent: float = 0.45
 ## 同時多個時依序略抬高，減少初幀重疊

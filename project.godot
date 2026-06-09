@@ -44,10 +44,10 @@ project/assembly_name="推金幣遊戲"
 
 [physics]
 
+common/physics_ticks_per_second=120
+3d/sleep_threshold_linear=0.06
 3d/sleep_threshold_angular=0.12
 3d/time_before_sleep=0.2
-3d/sleep_threshold_linear=0.06
-common/physics_ticks_per_second=120
 3d/solver/default_solver_iterations=24
 
 [rendering]
